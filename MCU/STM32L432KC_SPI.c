@@ -55,7 +55,7 @@ void spiOff() {
 char spiSendReceive(char send) {
   while (!_FLD2VAL(SPI_SR_TXE, SPI1->SR));  // Wait while transmit buffer not empty
   *((volatile char *) &(SPI1->DR)) = send;  // Send one byte
-  while (!_FLD2VAL(SPI_SR_RXNE, SPI1->SR));  // Wait while receive buffer yes empty
+  //while (!_FLD2VAL(SPI_SR_RXNE, SPI1->SR));  // Wait while receive buffer yes empty  // TODO
   char recv = *((volatile char *) &(SPI1->DR));  // Receive one byte
   return recv;
 }

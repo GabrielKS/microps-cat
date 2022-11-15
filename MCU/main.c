@@ -21,14 +21,7 @@ Purpose : Generic application start
 *   Application entry point.
 */
 int main(void) {
-  int i;
-
-  for (i = 0; i < 100; i++) {
-    printf("Hello World %d!\n", i);
-  }
-  do {
-    i++;
-  } while (1);
+  spi_demo();
 }
 
 /*************************** End of file ****************************/

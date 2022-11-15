@@ -1,0 +1,5 @@
+.DS_Store
+MCU/Output
+*.emSession
+*.jlink
+settings.json
