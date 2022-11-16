@@ -18,15 +18,15 @@ int get_num() {
 }
 
 int spi_demo(void) {
-    // Set up SPI (it initializes its own pins) and a timer
-    initSPI(1, 0, 0);
-    RCC->APB2ENR |= (RCC_APB2ENR_TIM15EN);
-    initTIM(TIM15);
-
     // Set up the input pins
     gpioEnable(GPIO_PORT_A);
     gpioEnable(GPIO_PORT_B);
     //gpioEnable(GPIO_PORT_C);
+
+    // Set up SPI (it initializes its own pins) and a timer
+    initSPI(1, 0, 0);
+    RCC->APB2ENR |= (RCC_APB2ENR_TIM15EN);
+    initTIM(TIM15);
 
     pinMode(in_1, GPIO_INPUT);
     pinMode(in_2, GPIO_INPUT);

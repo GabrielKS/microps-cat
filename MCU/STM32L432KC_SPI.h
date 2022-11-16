@@ -12,9 +12,9 @@
 #include "STM32L432KC.h"
 
 // Pin choices
-#define NSS_PIN PB0
-#define SCK_PIN PA5
-#define MISO_PIN PA6
+#define NSS_PIN PA11
+#define SCK_PIN PB3
+#define MISO_PIN PB4
 #define MOSI_PIN PB5
 
 

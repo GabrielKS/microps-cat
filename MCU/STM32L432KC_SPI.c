@@ -20,8 +20,8 @@ void initSPI(int br, int cpol, int cpha) {
   pinMode(MISO_PIN, GPIO_ALT);
   pinMode(MOSI_PIN, GPIO_ALT);
 
-  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL5, 5);  // Set proper alternate functions
-  GPIOA->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL6, 5);
+  GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL3, 5);  // Set proper alternate functions
+  GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL4, 5);
   GPIOB->AFR[0] |= _VAL2FLD(GPIO_AFRL_AFSEL5, 5);
 
   SPI1->CR1 |= _VAL2FLD(SPI_CR1_BR, br);  // "Clock rate using baud rate divisor"
