@@ -1,26 +1,35 @@
+
 // Top-level module for a demonstration of SPI: receives a byte and displays the low nybble on a seven-segment display
 module spi_demo(
+	input logic rst,
     input logic sck,
     input logic sdi,
     output logic sdo,
     input logic nss,
     output logic [6:0] seg);
+	
+	logic clk;
+	HSOSC #(.CLKHF_DIV(2'b01))
+		hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
 
     logic [7:0] byte_recv;
-    spi_byte(sck, sdi, sdo, nss, byte_recv);
-    seven_seg(byte_recv[3:0], seg);
+    spi_byte sb(rst, sck, sdi, sdo, nss, byte_recv);
+    seven_seg ss(byte_recv[3:0], seg);
 endmodule
 
 // SPI module! Currently read-only.
 module spi_byte(
+	input logic rst,
     input logic sck,
     input logic sdi,
     output logic sdo,
     input logic nss,
+	
     output logic [7:0] byte_recv);
 
     always_ff @(posedge sck) begin
-        byte_recv = {byte_recv[6:0], sdi};
+		if (rst == 0) byte_recv <= 0;
+        else byte_recv <= {byte_recv[6:0], sdi};
     end
 
 endmodule

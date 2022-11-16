@@ -1,5 +1,18 @@
+# System stuff:
 .DS_Store
+.vscode/settings.json
+
+# MCU stuff:
 MCU/Output
-*.emSession
-*.jlink
-settings.json
+MCU/*.emSession
+MCU/*.jlink
+MCU/settings.json
+
+# FPGA stuff:
+FPGA/*/impl_1/*
+FPGA/*/*.dir/*
+FPGA/*/*.ini
+FPGA/*/transcript
+FPGA/*/reportview.xml
+FPGA/*/*.log
+FPGA/*/*tcl.html
