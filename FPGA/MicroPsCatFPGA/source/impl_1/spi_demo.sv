@@ -1,16 +1,14 @@
-
 // Top-level module for a demonstration of SPI: receives a byte and displays the low nybble on a seven-segment display
 module spi_demo(
-	input logic rst,
+	input logic rst_raw,
     input logic sck,
     input logic sdi,
     output logic sdo,
     input logic nss,
     output logic [6:0] seg);
 	
-	logic clk;
-	HSOSC #(.CLKHF_DIV(2'b01))
-		hf_osc (.CLKHFPU(1'b1), .CLKHFEN(1'b1), .CLKHF(clk));
+	logic rst;  // reset button is active low
+	assign rst = ~rst_raw;
 
     logic [7:0] byte_recv;
     spi_byte sb(rst, sck, sdi, sdo, nss, byte_recv);
@@ -28,8 +26,8 @@ module spi_byte(
     output logic [7:0] byte_recv);
 
     always_ff @(posedge sck) begin
-		if (rst == 0) byte_recv <= 0;
-        else byte_recv <= {byte_recv[6:0], sdi};
+		if (rst) byte_recv <= 0;
+        else byte_recv <= {byte_recv[6:0], sdi};  // Shift a new bit into the byte
     end
 
 endmodule
