@@ -35,6 +35,3 @@ void configureClock(){
 
   SystemCoreClockUpdate();
 }
-
-  SystemCoreClockUpdate();
-}
