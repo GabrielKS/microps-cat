@@ -23,6 +23,7 @@ int inString(char request[], char des[]) {
 	return -1;
 }
 
+// print floats in debug mode
 void print_float(float f)
 {
   int before_point = (int)(f);
@@ -32,55 +33,46 @@ void print_float(float f)
   printf("%d.%d\n", before_point, after_point);
 }
 
-/////////////////////////////////////////////////////////////////
-// Solution Functions
-/////////////////////////////////////////////////////////////////
-
-
-int main(void) {
-  configureFlash();
-  configureClock();
-
-  gpioEnable(GPIO_PORT_A);
-  gpioEnable(GPIO_PORT_B);
-  gpioEnable(GPIO_PORT_C);
-
-  pinMode(PB3, GPIO_OUTPUT);
-  
-  RCC->APB2ENR |= (RCC_APB2ENR_TIM15EN);
-  initTIM(TIM15);
-  // set up the USART with the correct baud rate
-  int baudRate =  115200;
-  USART_TypeDef * imu = initUSART(USART1_ID, baudRate);
- // define the commands and addresses of registers
+// function to put imu in proper mode
+volatile char initIMU(USART_TypeDef * imu, int mode) {
+  // define the commands and addresses of registers
   char start = 0xAA; // see pg 94 of datasheet
   char write = 0x00;
   char opr_address = 0x3D;
-  char read = 0x01;
   char imu_mode = 0x01; // see page 21 of BNO055 datasheet
   char ndof_mode = 0x0C;
+  // do the actual mode
+  if (mode == 0) {
+       // set up operation mode
+      sendChar(imu, start); 
+      sendChar(imu, write); 
+      sendChar(imu, opr_address); 
+      sendChar(imu, 0x01);
+      sendChar(imu, imu_mode); 
+      readChar(imu);
+     }
+  else {
+      sendChar(imu, start); 
+      sendChar(imu, write); 
+      sendChar(imu, opr_address); 
+      sendChar(imu, 0x01);
+      sendChar(imu, ndof_mode); 
+      readChar(imu);
+  }
+    
+  volatile char opr_mode_status = readChar(imu);
+  return opr_mode_status;
+}
+// function to read roll and print to debug
+volatile int16_t readRoll(USART_TypeDef * imu) {
+   // define the commands and addresses of registers
+  char start = 0xAA; // see pg 94 of datasheet
+  char read = 0x01;
   char rollMSB_address = 0x1D; // see pg 53 of BNO55 datasheet
   char rollLSB_address = 0x1C;
   char send_length = 0x02; // hypothesis: 2 bytes (LSB then MSB) but for now just MSB
-  
- 
-  
-   volatile int iter = 0;
-   // set up operation mode
-  sendChar(imu, start); 
-  sendChar(imu, write); 
-  sendChar(imu, opr_address); 
-  sendChar(imu, 0x01);
-  sendChar(imu, ndof_mode); 
-  readChar(imu);
-  volatile char opr_mode_status = readChar(imu);
 
-  for(volatile int i = 0; i < 20000; i++);
-  int bbCount = 0;
-  int eeCount = 0;
-  while(1) {
-  
-  // send command to read data
+  // read the roll
   sendChar(imu, start); // start byte (see pg 94 of datasheet)
   sendChar(imu, read); // read
   sendChar(imu, rollMSB_address);
@@ -96,26 +88,55 @@ int main(void) {
     rollMSB =  readChar(imu);
     rollLSB =  readChar(imu);
     totalRoll = (rollMSB<<8)+rollLSB;
-    bbCount++;
   }
-  else eeCount++;
+  return totalRoll;
+}
+
+
+/////////////////////////////////////////////////////////////////
+// Solution Functions
+/////////////////////////////////////////////////////////////////
+
+
+int main(void) {
+  configureFlash();
+  configureClock();
+
+  gpioEnable(GPIO_PORT_A);
+  gpioEnable(GPIO_PORT_B);
+  gpioEnable(GPIO_PORT_C);
+  pinMode(PB3, GPIO_OUTPUT);
+  
+
+  // initialize SPI and timer
+  initSPI(1, 0, 0);
+
+  RCC->APB2ENR |= (RCC_APB2ENR_TIM15EN);
+  initTIM(TIM15);
+
+ 
+  // set up the USART with the correct baud rate
+  int baudRate =  115200;
+  USART_TypeDef * imu = initUSART(USART1_ID, baudRate);
+
+ 
+  
+  volatile int iter = 0;
+  volatile char opr_mode_status = initIMU(imu, 1);
+  while(1) {
+  
+  volatile int16_t totalRoll =  readRoll(imu);
   
   printf("%s", "iteration: ");
   printf("%d\n", iter);
 
   printf("%s", "opr_status: ");
   printf("%x\n", opr_mode_status);
-  //if(byte1 == 0xBB) {
-  //  printf("read success!\n");
-  //  printf("%s", "length of byte or status: ");
-  //  printf("%x\n", length_or_status);
-  //}
+ 
   
   // convert int to rotations and degrees
    float roll_rotations =  totalRoll/5760.0;
    float roll_degrees = totalRoll/16.0;
-
-  int bytes = sizeof(roll_rotations);
 
    // figure out number to send through SPI
   float moment_robot = 29; // calculate the moment of inertia later
@@ -128,30 +149,13 @@ int main(void) {
   int16_t sendSPI =  motor_spin*encoder_conversion;//can probably hard code
 
   
-  printf("%s", "length/status: ");
-  printf("%x\n", length_or_status);
-  printf("%s", "should be bb: ");
-  printf("%x\n",byte1);
-  printf("%s", "rollMSB: ");
-  printf("%d\n", rollMSB);
-  printf("%s", "rollLSB: ");
-  printf("%d\n", rollLSB);
-  printf("%s", "total: ");
-  printf("%d\n", totalRoll);
   printf("%s", "degrees roll: ");
   print_float(roll_degrees);
   printf("%s", "rotations: ");
-  printf("%x\n", roll_rotations);
+  printf("%d\n", roll_rotations);
   print_float(roll_rotations);
-  printf("%d\n", bytes);
-
-  printf("%s", "bbCount: ");
-  printf("%d\n", bbCount);
-
-  printf("%s", "eeCount: ");
-  printf("%d\n", eeCount);
-
-  printf("%s", "send SPI");
+ 
+  printf("%s", "send SPI: ");
   printf("%d\n", sendSPI);
 
  
