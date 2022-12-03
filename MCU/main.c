@@ -65,7 +65,7 @@ volatile char initIMU(USART_TypeDef * imu, int mode) {
   return opr_mode_status;
 }
 // function to read roll and print to debug
-volatile int16_t readRoll(USART_TypeDef * imu) {
+/*volatile int16_t readRoll(USART_TypeDef * imu) {
    // define the commands and addresses of registers
   char start = 0xAA; // see pg 94 of datasheet
   char read = 0x01;
@@ -91,7 +91,7 @@ volatile int16_t readRoll(USART_TypeDef * imu) {
     totalRoll = (rollMSB<<8)+rollLSB;
   }
   return totalRoll;
-}
+}*/
 
 
 /////////////////////////////////////////////////////////////////
@@ -124,15 +124,37 @@ int main(void) {
   
   volatile int iter = 0;
   volatile char opr_mode_status = initIMU(imu, 1);
+  //start of loop
   while(1) {
   
-  volatile int16_t totalRoll =  readRoll(imu);
+    // define the commands and addresses of registers
+  char start = 0xAA; // see pg 94 of datasheet
+  char read = 0x01;
+  char rollMSB_address = 0x1D; // see pg 53 of BNO55 datasheet
+  char rollLSB_address = 0x1C;
+  char send_length = 0x02; // hypothesis: 2 bytes (LSB then MSB) but for now just MSB
+
+  // read the roll
+  sendChar(imu, start); // start byte (see pg 94 of datasheet)
+  sendChar(imu, read); // read
+  sendChar(imu, rollMSB_address);
+  sendChar(imu, send_length);
+
+  volatile char byte1 = readChar(imu);
+  volatile char length_or_status = readChar(imu);
+  volatile signed char rollMSB, rollLSB;
+  volatile int16_t totalRoll;
+ 
+
+  if(byte1 == 0xBB)  {
+    rollMSB =  readChar(imu);
+    rollLSB =  readChar(imu);
+    totalRoll = (rollMSB<<8)+rollLSB;
+   }
+  //volatile int16_t totalRoll =  readRoll(imu);
   
   printf("%s", "iteration: ");
   printf("%d\n", iter);
-
-  printf("%s", "opr_status: ");
-  printf("%x\n", opr_mode_status);
  
   
   // convert int to rotations and degrees
@@ -149,20 +171,42 @@ int main(void) {
   
   int16_t sendSPI =  motor_spin*encoder_conversion;//can probably hard code
 
+  char sendSPI_MSB = sendSPI>>8;
+  char sendSPI_LSB = sendSPI;
+
+  spiOn();
+  spiSendReceive(sendSPI_MSB);
+  spiOff();
+
+  spiOn();
+  spiSendReceive(sendSPI_LSB);
+  spiOff();
+  volatile char nib = 0;
+  nib |= ((((sendSPI_MSB)&(0b11)) << 2) |((sendSPI_LSB)&(0b11)));
+
   
-  printf("%s", "degrees roll: ");
-  print_float(roll_degrees);
-  printf("%s", "rotations: ");
-  printf("%d\n", roll_rotations);
-  print_float(roll_rotations);
- 
+  //printf("%s", "degrees roll: ");
+  //print_float(roll_degrees);
+  //printf("%s", "rotations: ");
+  //printf("%d\n", roll_rotations);
+  //print_float(roll_rotations);
+  
+  printf("%s", "should be bb: ");
+  printf("%x\n", byte1);
+
   printf("%s", "send SPI: ");
-  printf("%d\n", sendSPI);
+  printf("%x\n", sendSPI);
+
+  printf("%x\n", sendSPI_MSB);
+  printf("%x\n", sendSPI_LSB);
+  printf("%s", "display: ");
+  printf("%x\n", nib);
+
 
  
   iter++;
   
-  for(volatile int i = 0; i < 200000; i++);
+  for(volatile int i = 0; i < 10000000; i++);
 
  
   }
