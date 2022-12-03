@@ -64,6 +64,7 @@
       <file file_name="lib/STM32L432KC_TIM.h" />
       <file file_name="lib/STM32L432KC_USART.c" />
       <file file_name="lib/STM32L432KC_USART.h" />
+      <file file_name="main.h" />
     </folder>
     <folder Name="System Files">
       <file file_name="SEGGER_THUMB_Startup.s" />

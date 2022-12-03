@@ -10,6 +10,7 @@ Date: 9/14/19
 #include <stdlib.h>
 #include <stdio.h>
 #include "main.h"
+#include "STM32L432KC.h"
 
 /////////////////////////////////////////////////////////////////
 // Provided Constants and Functions

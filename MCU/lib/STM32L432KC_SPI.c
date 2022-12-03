@@ -59,14 +59,3 @@ char spiSendReceive(char send) {
   char recv = *((volatile char *) &(SPI1->DR));  // Receive one byte
   return recv;
 }
-
-/* Transmits a character (1 byte) over SPI and returns the received character.
- *    -- send: the character to send over SPI
- *    -- return: the character received over SPI */
-char spiSendReceive(char send) {
-  while (!_FLD2VAL(SPI_SR_TXE, SPI1->SR));  // Wait while transmit buffer not empty
-  *((volatile char *) &(SPI1->DR)) = send;  // Send one byte
-  //while (!_FLD2VAL(SPI_SR_RXNE, SPI1->SR));  // Wait while receive buffer yes empty  // TODO
-  char recv = *((volatile char *) &(SPI1->DR));  // Receive one byte
-  return recv;
-}
