@@ -58,14 +58,14 @@
   <Watches active="0" update="Never"/>
  </Watch4>
  <Files>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="102" useTextEdit="1" path="main.c" left="0" selected="1" top="90" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="13401" useTextEdit="1" openedFrom="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/lib/STM32L432KC_USART.c" path="STM32L4xx/Device/Include/stm32l432xx.h" left="0" top="13502" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="33" y="123" useTextEdit="1" path="main.c" left="0" top="9" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="8" y="13401" useTextEdit="1" openedFrom="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/lib/STM32L432KC_USART.c" path="STM32L4xx/Device/Include/stm32l432xx.h" left="0" top="13401" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="18" y="13" useTextEdit="1" path="STM32L432KC_USART.c" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="9" y="10" useTextEdit="1" path="main.h" left="0" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="0" useTextEdit="1" path="lib/STM32L432KC.h" left="0" top="0" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="89" useTextEdit="1" openedFrom="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/main.c" path="lib/STM32L432KC_USART.c" left="0" top="83" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="75" useTextEdit="1" openedFrom="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/main.c" path="lib/STM32L432KC_USART.c" left="0" selected="1" top="0" codecName="Default"/>
   <SessionOpenFile windowGroup="DockEditLeft" x="0" y="219" useTextEdit="1" path="STM32L4xx/Source/STM32L4xx_Startup.s" left="0" top="209" codecName="Default"/>
-  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="24" useTextEdit="1" path="lib/STM32L432KC_RCC.c" left="0" top="18" codecName="Default"/>
+  <SessionOpenFile windowGroup="DockEditLeft" x="0" y="24" useTextEdit="1" path="lib/STM32L432KC_RCC.c" left="0" top="16" codecName="Default"/>
  </Files>
- <EMStudioWindow activeProject="MicroPsCat" fileDialogDefaultFilter="*.*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/lib" debugSearchPath="" autoConnectCapabilities="3711"/>
+ <EMStudioWindow activeProject="MicroPsCat" fileDialogDefaultFilter="*.*" autoConnectTarget="J-Link" buildConfiguration="Debug" sessionSettings="" debugSearchFileMap="" fileDialogInitialDirectory="C:/Users/Anthony/Documents/MicroPs/Final Project/microps-cat/MCU/lib" debugSearchPath="" autoConnectCapabilities="3199"/>
 </session>

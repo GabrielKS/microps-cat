@@ -76,7 +76,8 @@ int main(void) {
   volatile char opr_mode_status = readChar(imu);
 
   for(volatile int i = 0; i < 20000; i++);
-
+  int bbCount = 0;
+  int eeCount = 0;
   while(1) {
   
   // send command to read data
@@ -90,11 +91,14 @@ int main(void) {
   volatile signed char rollMSB, rollLSB;
   volatile int16_t totalRoll;
  
+
   if(byte1 == 0xBB)  {
     rollMSB =  readChar(imu);
     rollLSB =  readChar(imu);
     totalRoll = (rollMSB<<8)+rollLSB;
+    bbCount++;
   }
+  else eeCount++;
   
   printf("%s", "iteration: ");
   printf("%d\n", iter);
@@ -110,6 +114,19 @@ int main(void) {
   // convert int to rotations and degrees
    float roll_rotations =  totalRoll/5760.0;
    float roll_degrees = totalRoll/16.0;
+
+  int bytes = sizeof(roll_rotations);
+
+   // figure out number to send through SPI
+  float moment_robot = 29; // calculate the moment of inertia later
+  float moment_wheel = 1; // ^^
+  // hardcode ratio later
+  float ratio = ((1+moment_robot)/moment_wheel);
+  float motor_spin = roll_rotations*ratio;
+  uint8_t encoder_conversion = 80; // place holder number, could be 80 
+  
+  int16_t sendSPI =  motor_spin*encoder_conversion;//can probably hard code
+
   
   printf("%s", "length/status: ");
   printf("%x\n", length_or_status);
@@ -124,20 +141,24 @@ int main(void) {
   printf("%s", "degrees roll: ");
   print_float(roll_degrees);
   printf("%s", "rotations: ");
+  printf("%x\n", roll_rotations);
   print_float(roll_rotations);
+  printf("%d\n", bytes);
+
+  printf("%s", "bbCount: ");
+  printf("%d\n", bbCount);
+
+  printf("%s", "eeCount: ");
+  printf("%d\n", eeCount);
+
+  printf("%s", "send SPI");
+  printf("%d\n", sendSPI);
+
  
   iter++;
   
   for(volatile int i = 0; i < 200000; i++);
 
-  //// figure out number to send through SPI
-  //float moment_robot = 29; // calculate the moment of inertia later
-  //float moment_wheel = 1; // ^^
-  //// hardcode motor_spin later
-  //float motor_spin = roll_rotations*((1+moment_robot)/moment_wheel);
-  //uint8_t encoder_conversion = 20; // place holder number, could be 80 
-  
-  //float sendSPI =  motor_spin*encoder_conversion;//can probably hard code
-
+ 
   }
 }
