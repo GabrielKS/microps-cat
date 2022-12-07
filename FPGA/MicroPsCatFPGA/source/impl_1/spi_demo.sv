@@ -10,12 +10,37 @@ module spi_demo(
 	logic rst;  // reset button is active low
 	assign rst = ~rst_raw;
     logic [15:0] roll;
-    getRoll sb(rst, sck, sdi, sdo, nss, roll);
+    get_roll sb(rst, sck, sdi, sdo, nss, roll);
     seven_seg ss(~{roll[9:8], roll[1:0]}, seg);
 endmodule
 
-// SPI module! Currently read-only.
-module getRoll(
+// Old SPI module for backwards compatibility
+module spi_byte(
+	input logic rst,
+    input logic sck,
+    input logic sdi,
+    output logic sdo,
+    input logic nss,
+	
+    output logic [7:0] byte_recv);
+	
+	logic [7:0] bufr;
+
+    always_ff @(posedge sck) begin
+		if (rst) bufr <= 0;
+        else bufr <= {bufr[6:0], sdi};  // Shift a new bit into the byte
+    end
+	
+	always_ff @(negedge nss) begin
+		if (rst) byte_recv <= 0;
+		byte_recv <= bufr;
+	end
+	//assign byte_recv = bufr;
+endmodule
+
+
+// New, two-byte SPI module
+module get_roll(
 	input logic rst,
     input logic sck,
     input logic sdi,
@@ -23,23 +48,23 @@ module getRoll(
     input logic nss,
 	
     output logic [15:0] roll);
+	
+	logic [15:0] bufr;
 
     always_ff @(posedge sck) begin
-		if (rst) roll <= 0;
-        else roll <= {roll[14:0], sdi};  // Shift a new bit into the byte
+		if (rst) bufr <= 0;
+        else bufr <= {bufr[14:0], sdi};  // Shift a new bit into the byte
     end
-
+	
+	always_ff @(negedge nss) begin
+		if (rst) byte_recv <= 0;
+		byte_recv <= bufr;
+	end
 endmodule
 
-/*
-Creator: Anthony Kang
-Email: akang@hmc.edu
-Date of Creation: September 6th 2022
-Purpose: Make a seven-segment display (SSD) show the hexadecimal input of the four switches (ie all switches off will display 0).
-*/
+
 module seven_seg(	input logic [3:0] switch,
 			output logic [6:0] ssd);
-			
 		always_comb
 			case(switch) // switch is OFF at 1
 				4'b0000 : ssd = 7'b0001110;  // display F

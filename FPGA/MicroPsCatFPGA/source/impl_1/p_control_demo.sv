@@ -67,9 +67,9 @@ module pwm16(  // PWM with 16-bit signed integer as input
 	assign sign = (frac < 0);
 	
 	logic [31:0] ticks_cycle;
-	assign ticks_cycle = 1 << 15;  // Magnitude is out of 15 bits
+	assign ticks_cycle = 1 << 8;  // Magnitude is out of 15 bits
 	logic [31:0] ticks_on;
-	assign ticks_on = sign ? -frac : frac;
+	assign ticks_on = (sign ? -frac : frac) >> 7;
 	logic out_mag;
 	blink_counter bc(clk, rst, ticks_cycle, ticks_on, out_mag);
 	

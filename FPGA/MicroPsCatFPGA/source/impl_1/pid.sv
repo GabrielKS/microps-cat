@@ -3,14 +3,17 @@ module pid_16(  // PID control with 16-bit signed integers
 	input logic signed [15:0] kp_n, kp_ds,
 	input logic signed [15:0] ki_n, ki_ds,
 	input logic signed [15:0] kd_n, kd_ds,
-	input logic signed [15:0] max_integral, derivative_downsample;
+	input logic signed [31:0] max_integral,
+	input logic signed [15:0] max_integral_step, derivative_downsample,
 	input logic signed [15:0] setpoint, observed,
 	output logic signed [15:0] out);
 
-	logic signed[15:0] error, integral, derivative, integral_unclamped, integral_clamped, derivative_counter, old_error;
+	logic signed [15:0] error, derivative, error_clamped, derivative_counter, old_error;
+	logic signed [31:0] integral, integral_unclamped, integral_clamped;
 	assign error = setpoint-observed;
-	assign integral_unclamped = integral+error;
-	16_clamp iclamp(integral_unclamped, -max_integral, max_integral);
+	clamp_16 eclamp(error, -max_integral_step, max_integral_step, error_clamped);
+	assign integral_unclamped = integral+error_clamped;
+	clamp_32 iclamp(integral_unclamped, -max_integral, max_integral, integral_clamped);
 
 	always_ff @(posedge clk) begin
 		if (rst) begin
@@ -31,40 +34,52 @@ module pid_16(  // PID control with 16-bit signed integers
 			else derivative_counter <= derivative_counter+1;
 		end
 	end
-
-	always_ff @(posedge sck) begin
-		if (rst) byte_recv <= 0;
-        else byte_recv <= {byte_recv[6:0], sdi};  // Shift a new bit into the byte
-    end
 	
-	logic signed[15:0] p_term, i_term, d_term;
-	multiply_clamp mp(error, kp_n, kp_d, -'sd32768, 'sd32767, p_term);
-	multiply_clamp mp(integral, ki_n, ki_d, -'sd32768, 'sd32767, i_term);
-	multiply_clamp mp(derivative, kd_n, kd_d, -'sd32768, 'sd32767, d_term);
-	logic signed[31:0] big_sum;
+	logic signed [15:0] p_term, i_term, d_term;
+	multiply_clamp mp(error, kp_n, kp_ds, p_term);
+	multiply_clamp_big mi(integral, ki_n, ki_ds, i_term);
+	multiply_clamp md(derivative, kd_n, kd_ds, d_term);
+	logic signed [31:0] big_sum;
 	assign big_sum = p_term+i_term+d_term;
-	32_clamp c(big_sum, -'sd32768, 'sd32767, out);
+	clamp_32_16 c(big_sum, out);
 endmodule
 
 module multiply_clamp(
 	input logic signed [15:0] m1, numer, denom_pow,
-	input logic signed [15:0] min, max,
 	output logic signed [15:0] out);
 
-	logic signed[31:0] step1, step2;
+	logic signed [31:0] step1, step2;
 	assign step1 = {{16{m1[15]}}, m1}*{{16{numer[15]}}, numer};  // Manually sign-extend to promote bitlength
 	assign step2 = step1 >>> denom_pow;
-	32_clamp c(step2, min, max, out);
+	clamp_32_16 c(step2, out);
 endmodule
 
-module 32_clamp(
-	input logic signed[31:0] n, min, max
-	output logic signed[15:0] out);
+// Version of multiply_clamp designed for 32-bit inputs. Does the right-shifting before the multiplication to avoid overflow.
+module multiply_clamp_big(
+	input logic signed [31:0] m1,
+	input logic signed [15:0] numer, denom_pow,
+	output logic signed [15:0] out);
+
+	logic signed [31:0] step1, step2;
+	assign step1 = m1 >>> denom_pow;
+	assign step2 = step1*{{16{numer[15]}}, numer};
+	clamp_32_16 c(step2, out);
+endmodule
+
+module clamp_32(
+	input logic signed [31:0] n, min, max,
+	output logic signed [31:0] out);
 	assign out = (n < min) ? min : ((n > max) ? max : n);
 endmodule
 
-module 16_clamp(
-	input logic signed[15:0] n, min, max
-	output logic signed[15:0] out);
+module clamp_32_16(
+	input logic signed [31:0] n,
+	output logic signed [15:0] out);
+	assign out = (n < -'sd32768) ? -'sd32768 : ((n > 'sd32767) ? 'sd32767 : n);
+endmodule
+
+module clamp_16(
+	input logic signed [15:0] n, min, max,
+	output logic signed [15:0] out);
 	assign out = (n < min) ? min : ((n > max) ? max : n);
 endmodule
