@@ -24,11 +24,20 @@ module spi_byte(
     input logic nss,
 	
     output logic [7:0] byte_recv);
+	
+	logic [7:0] bufr;
 
     always_ff @(posedge sck) begin
-		if (rst) byte_recv <= 0;
-        else byte_recv <= {byte_recv[6:0], sdi};  // Shift a new bit into the byte
+		if (rst) bufr <= 0;
+        else bufr <= {bufr[6:0], sdi};  // Shift a new bit into the byte
     end
+	
+	always_ff @(negedge nss) begin
+		if (rst) byte_recv <= 0;
+		byte_recv <= bufr;
+	end
+	//assign byte_recv = bufr;
+	
 
 endmodule
 

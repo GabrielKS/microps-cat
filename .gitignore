@@ -16,6 +16,7 @@ FPGA/*/transcript
 FPGA/*/reportview.xml
 FPGA/*/*.log
 FPGA/*/*tcl.html
+.recovery
 
 # Miscellaneous:
 # Gabriel's naming convention for old versions of things when it's not useful to go through the Git rigmarole:
