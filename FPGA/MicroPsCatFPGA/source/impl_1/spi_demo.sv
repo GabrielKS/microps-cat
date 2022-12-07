@@ -46,7 +46,6 @@ module get_roll(
     input logic sdi,
     output logic sdo,
     input logic nss,
-	
     output logic [15:0] roll);
 	
 	logic [15:0] bufr;
@@ -57,8 +56,8 @@ module get_roll(
     end
 	
 	always_ff @(negedge nss) begin
-		if (rst) byte_recv <= 0;
-		byte_recv <= bufr;
+		if (rst) roll <= 0;
+		roll <= bufr;
 	end
 endmodule
 
