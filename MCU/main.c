@@ -42,6 +42,7 @@ volatile char initIMU(USART_TypeDef * imu, int mode) {
   char opr_address = 0x3D;
   char imu_mode = 0x01; // see page 21 of BNO055 datasheet
   char ndof_mode = 0x0C;
+  char gyro_only = 0x03;
   // do the actual mode
   if (mode == 0) {
        // set up operation mode
@@ -65,31 +66,86 @@ volatile char initIMU(USART_TypeDef * imu, int mode) {
   return opr_mode_status;
 }
 // function to read roll 
-volatile int16_t readRoll(USART_TypeDef * imu) {
+/*void axisRemap(USART_TypeDef * imu) {
+    // define the commands and addresses of registers
+  char start = 0xAA; // see pg 94 of datasheet
+  char write = 0x00;
+  char read = 0x01;
+  char axis_address = 0x24; /// pg 24 of datasheet
+  
+// eventually send rr 10 00 01
+    sendChar(imu, start); 
+    sendChar(imu, write); 
+    sendChar(imu, axis_address); 
+    sendChar(imu, 0x01);
+    sendChar(imu, 0b00100001);
+    readChar(imu);
+    readChar(imu);
+}*/
+volatile int16_t readRoll(USART_TypeDef * imu, volatile int iter, volatile int16_t totalRoll) {
    // define the commands and addresses of registers
   char start = 0xAA; // see pg 94 of datasheet
   char read = 0x01;
-  char rollMSB_address = 0x1D; // see pg 53 of BNO55 datasheet
-  char rollLSB_address = 0x1C;
-  char send_length = 0x02; // hypothesis: 2 bytes (LSB then MSB) but for now just MSB
+  char rollMSB_address = 0x1f; // see pg 53 of BNO55 datasheet--> change to pitch
+  char rollLSB_address = 0x1e;
+  char send_length = 0x01; // hypothesis: 2 bytes (LSB then MSB) but for now just MSB
+  
+  volatile char byte1MSB, byte1LSB; //= readChar(imu);
+  volatile char length_or_statusMSB, length_or_statusLSB;//= readChar(imu);
+    
 
-  // read the roll
+  volatile int16_t rollMSB;
+  volatile unsigned char rollLSB;
+
+ 
+   // read the roll MSB
   sendChar(imu, start); // start byte (see pg 94 of datasheet)
   sendChar(imu, read); // read
   sendChar(imu, rollMSB_address);
   sendChar(imu, send_length);
+  byte1MSB = readChar(imu);
+  length_or_statusMSB = readChar(imu);
 
-  volatile char byte1 = readChar(imu);
-  volatile char length_or_status = readChar(imu);
-  volatile signed char rollMSB, rollLSB;
-  volatile int16_t totalRoll;
- 
+  if (byte1MSB == 0xBB) {
+    rollMSB = readChar(imu);
+  }
 
-  if(byte1 == 0xBB)  {
+  // read roll LSB
+  sendChar(imu, start); // start byte (see pg 94 of datasheet)
+  sendChar(imu, read); // read
+  sendChar(imu, rollLSB_address);
+  sendChar(imu, send_length);
+  byte1LSB = readChar(imu);
+  length_or_statusLSB = readChar(imu);
+
+    if (byte1LSB == 0xBB) {
+    rollLSB = readChar(imu);
+  }
+
+  /*if(byte1 == 0xBB)  {
     rollMSB =  readChar(imu);
     rollLSB =  readChar(imu);
     totalRoll = (rollMSB<<8)+rollLSB;
-  }
+    totalRoll = totalRoll;
+  }*/
+   int16_t temp = (rollMSB<<8)+rollLSB;
+   if (abs(temp-totalRoll)>0xA0&& iter>2);
+   else totalRoll = (rollMSB<<8)+rollLSB;
+
+    printf("%s", "rollMSB: ");
+    printf("%x\n", rollMSB);
+    printf("%s", "rollLSB: ");
+    printf("%x\n", rollLSB);
+    printf("%s", "byte1 LSB: ");
+    printf("%x\n", byte1LSB);
+    printf("%s", "message LSB: ");
+    printf("%x\n", length_or_statusLSB);
+    printf("%s", "byte1 MSB: ");
+    printf("%x\n", byte1MSB);
+    printf("%s", "message MSB: ");
+    printf("%x\n", length_or_statusMSB);
+
+
   return totalRoll;
 }
 
@@ -153,14 +209,14 @@ int main(void) {
  
   
   volatile int iter = 0;
+  volatile int16_t totalRoll;
   volatile char opr_mode_status = initIMU(imu, 1);
-
+  //axisRemap(imu);
   volatile int led_count = 0;
   //start of loop
   while(1) {
-  
 
-    volatile int16_t totalRoll =  readRoll(imu);
+    volatile int16_t totalRoll =  readRoll(imu, iter, totalRoll);
     volatile int16_t totalAccel = readAccel(imu);
   
     printf("%s", "iteration: ");
@@ -174,7 +230,7 @@ int main(void) {
      float accelZ = totalAccel/100.0;
 
      // figure out number to send through SPI
-    float moment_robot = 29; // calculate the moment of inertia later
+    float moment_robot = 2; // calculate the moment of inertia later
     float moment_wheel = 1; // ^^
     // hardcode ratio later
     float ratio = ((1+moment_robot)/moment_wheel);
@@ -195,8 +251,9 @@ int main(void) {
     spiOff();
     volatile char nib = 0;
     nib |= ((((sendSPI_MSB)&(0b11)) << 2) |((sendSPI_LSB)&(0b11)));
-
-  
+     
+    printf("%s", "totalRoll: ");
+    printf("%d\n", totalRoll);
     printf("%s", "degrees roll: ");
     print_float(roll_degrees);
     printf("%s", "acceleration (m/s^2): ");
@@ -219,18 +276,19 @@ int main(void) {
     iter++;
    
 
-    // test code for driving LED high when dropped
-    if (led_count>100) {
-      digitalWrite(PB6, 0); // turn off led after some delay
-      led_count = 0;
-     } 
+    //// test code for driving LED high when dropped
+    //if (led_count>100 && accelZ>5) {
+    //  digitalWrite(PB6, 0); // turn off led after some delay
+    //  led_count = 0;
+    // } 
 
-    if(accelZ<5.0) digitalWrite(PB6,1);
+    if(accelZ<5.0) digitalWrite(PA12,1);
+    else digitalWrite(PA12,0);
 
     led_count++;
 
   
-    for(volatile int i = 0; i < 100000; i++);
+    for(volatile int i = 0; i < 5000; i++);
 
  
   }
