@@ -30,15 +30,15 @@ module imu_motor_demo(
 	// PID CONTROLLER
 	logic signed[15:0] kp_n, kp_ds, ki_n, ki_ds, kd_n, kd_ds, max_integral_step;
 	logic signed[31:0] max_integral, derivative_downsample;
-	assign kp_n = 8000;
-	assign kp_ds = 2;
-	assign ki_n = 3;
-	assign ki_ds = 12;
-	assign kd_n = 0;
-	assign kd_ds = 2;
+	assign kp_n = 800;
+	assign kp_ds = 0;
+	assign ki_n = 2;
+	assign ki_ds = 14;
+	assign kd_n = 7500;
+	assign kd_ds = 0;
 	assign max_integral = 20000000;
 	assign max_integral_step = 5;
-	assign derivative_downsample = 8;
+	assign derivative_downsample = 120000;
 	logic signed[15:0] out_frac;
 	pid_16 pid(clk, rst, kp_n, kp_ds, ki_n, ki_ds, kd_n, kd_ds, max_integral, max_integral_step, derivative_downsample, setpoint, position, out_frac);
 	
