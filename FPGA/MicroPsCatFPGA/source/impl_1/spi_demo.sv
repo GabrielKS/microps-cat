@@ -9,13 +9,12 @@ module spi_demo(
 	
 	logic rst;  // reset button is active low
 	assign rst = ~rst_raw;
-
-    logic [7:0] byte_recv;
-    spi_byte sb(rst, sck, sdi, sdo, nss, byte_recv);
-    seven_seg ss(byte_recv[3:0], seg);
+    logic [15:0] roll;
+    get_roll sb(rst, sck, sdi, sdo, nss, roll);
+    seven_seg ss(~{roll[9:8], roll[1:0]}, seg);
 endmodule
 
-// SPI module! Currently read-only.
+// Old SPI module for backwards compatibility
 module spi_byte(
 	input logic rst,
     input logic sck,
@@ -37,33 +36,51 @@ module spi_byte(
 		byte_recv <= bufr;
 	end
 	//assign byte_recv = bufr;
-	
-
 endmodule
 
-// The usual seven-segment module
-module seven_seg(  // Encapsulates logic to display the input nybble in hex on the output seven-segment display.
-	input logic [3:0] num,
-	output logic [6:0] segs);
+
+// New, two-byte SPI module
+module get_roll(
+	input logic rst,
+    input logic sck,
+    input logic sdi,
+    output logic sdo,
+    input logic nss,
+    output logic [15:0] roll);
 	
-	always_comb
-		case(num)  // Number to segment activation lookup table (active low)
-			0:  segs <= 'b0000001;
-			1:  segs <= 'b1001111;
-			2:  segs <= 'b0010010;
-			3:  segs <= 'b0000110;
-			4:  segs <= 'b1001100;
-			5:  segs <= 'b0100100;
-			6:  segs <= 'b0100000;
-			7:  segs <= 'b0001111;
-			8:  segs <= 'b0000000;
-			9:  segs <= 'b0000100;
-			10: segs <= 'b0001000;
-			11: segs <= 'b1100000;
-			12: segs <= 'b0110001;
-			13: segs <= 'b1000010;
-			14: segs <= 'b0110000;
-			15: segs <= 'b0111000;
-			default: segs <= 'b0110110;  // Dogmatic; unused in practice
-		endcase
+	logic [15:0] bufr;
+
+    always_ff @(posedge sck) begin
+		if (rst) bufr <= 0;
+        else bufr <= {bufr[14:0], sdi};  // Shift a new bit into the byte
+    end
+	
+	always_ff @(negedge nss) begin
+		if (rst) roll <= 0;
+		roll <= bufr;
+	end
+endmodule
+
+
+module seven_seg(	input logic [3:0] switch,
+			output logic [6:0] ssd);
+		always_comb
+			case(switch) // switch is OFF at 1
+				4'b0000 : ssd = 7'b0001110;  // display F
+				4'b0001 : ssd = 7'b0000110;  // display E
+				4'b0010 : ssd = 7'b0100001;  // display d
+				4'b0011 : ssd = 7'b1000110;  // display C
+				4'b0100 : ssd = 7'b0000011;  // display b
+				4'b0101 : ssd = 7'b0001000;  // display A
+				4'b0110 : ssd = 7'b0011000;  // display 9
+				4'b0111 : ssd = 7'b0000000;  // display 8
+				4'b1000 : ssd = 7'b1111000;  // display 7
+				4'b1001 : ssd = 7'b0000010;  // display 6 
+				4'b1010 : ssd = 7'b0010010;  // display 5
+				4'b1011 : ssd = 7'b0011001;  // display 4
+				4'b1100 : ssd = 7'b0110000;  // display 3
+				4'b1101 : ssd = 7'b0100100;  // display 2
+				4'b1110 : ssd = 7'b1111001;  // display 1
+				4'b1111 : ssd = 7'b1000000;  // display 0
+			endcase
 endmodule

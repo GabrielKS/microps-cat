@@ -1,4 +1,5 @@
 // Demonstration of PWM: drives the motor at a duty cycle depending on the input nybble
+
 module p_control_demo(
 	input logic rst_raw,
     input logic sck,
